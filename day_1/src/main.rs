@@ -1,9 +1,10 @@
+use std::collections::HashMap;
 use std::fs;
 
 fn main() {
     let lines = parse_file();
 
-    let (mut list1, mut list2) = lines.iter().fold((vec![], vec![]), |mut acc, line| {
+    let (mut left_list, mut right_list) = lines.iter().fold((vec![], vec![]), |mut acc, line| {
         let nums: Vec<i64> = line.split_whitespace().map(|val| val.parse().unwrap()).collect();
 
         acc.0.push(nums[0]);
@@ -12,15 +13,38 @@ fn main() {
         acc
     });
 
-    list1.sort();
-    list2.sort();
+    left_list.sort();
+    right_list.sort();
 
+    // part 1
     let mut sum: i64 = 0;
-    for pair in list1.iter().zip(list2.iter()) {
+    for pair in left_list.iter().zip(right_list.iter()) {
         sum += (pair.0 - pair.1).abs();
     }
 
     println!("Sum is: {sum}");
+
+    // part 2
+    let mut similarity_score = 0;
+    let right_counts: HashMap<i64, i64> = right_list.iter().fold(HashMap::new(), |mut acc, val| {
+        match acc.get_mut(val) {
+            Some(count) => *count += 1,
+            None => {
+                acc.insert(*val, 1);
+            }
+        }
+
+        acc
+    });
+
+    left_list.iter().for_each(|val| {
+        match right_counts.get(val) {
+            Some(count) => similarity_score += val * count,
+            None => { /* nothing */ }
+        }
+    });
+
+    println!("Similarity score is: {similarity_score}");
 }
 
 fn parse_file() -> Vec<String> {
