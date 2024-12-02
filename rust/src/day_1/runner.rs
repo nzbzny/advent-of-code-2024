@@ -1,8 +1,9 @@
-use std::collections::HashMap;
-use std::fs;
+use crate::utils;
 
-fn main() {
-    let lines = parse_file();
+use std::collections::HashMap;
+
+pub fn run() {
+    let lines = utils::parse_file(1);
 
     let (mut left_list, mut right_list) = lines.iter().fold((vec![], vec![]), |mut acc, line| {
         let nums: Vec<i64> = line.split_whitespace().map(|val| val.parse().unwrap()).collect();
@@ -45,10 +46,5 @@ fn main() {
     });
 
     println!("Similarity score is: {similarity_score}");
-}
 
-fn parse_file() -> Vec<String> {
-    let contents = fs::read_to_string("./src/input.txt").expect("Failed to read file");
-
-    contents.split("\n").map(str::to_string).filter(|line| !line.is_empty()).collect()
 }
