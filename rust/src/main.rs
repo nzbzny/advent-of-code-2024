@@ -1,6 +1,7 @@
 mod day_1;
 mod day_2;
 mod day_3;
+mod day_4;
 mod utils;
 
 fn main() {
@@ -10,6 +11,7 @@ fn main() {
                 1 => crate::day_1::run(),
                 2 => crate::day_2::run(),
                 3 => crate::day_3::run(),
+                4 => crate::day_4::run(),
                 day => println!("Unknown day: {day}"),
             }
         }
