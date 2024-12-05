@@ -1,6 +1,6 @@
 use crate::utils;
 
-pub fn is_safe_line(nums: &Vec<i64>) -> bool {
+pub fn is_safe_line(nums: &[i64]) -> bool {
     let increasing: bool = nums[1] > nums[0];
     for i in 1..nums.len() {
         if nums[i] == nums[i - 1] {
@@ -17,7 +17,7 @@ pub fn is_safe_line(nums: &Vec<i64>) -> bool {
         }
     }
 
-    return true;
+    true
 }
 
 pub fn run() {
@@ -25,7 +25,10 @@ pub fn run() {
 
     // part 1
     let safe_levels = lines.iter().fold(0, |acc, line| {
-        let nums: Vec<i64> = line.split_whitespace().map(|val| val.parse().unwrap()).collect();
+        let nums: Vec<i64> = line
+            .split_whitespace()
+            .map(|val| val.parse().unwrap())
+            .collect();
 
         let safe = is_safe_line(&nums);
 
@@ -40,13 +43,20 @@ pub fn run() {
 
     // part 2
     let dampened_safe_levels = lines.iter().fold(0, |acc, line| {
-        let nums: Vec<i64> = line.split_whitespace().map(|val| val.parse().unwrap()).collect();
-        
+        let nums: Vec<i64> = line
+            .split_whitespace()
+            .map(|val| val.parse().unwrap())
+            .collect();
+
         let mut safe = is_safe_line(&nums);
         if !safe {
             for i in 0..nums.len() {
-                let new_nums = nums.iter().take(i).chain(nums.iter().skip(i + 1)).map(&i64::to_owned).collect();
-                
+                let new_nums: Vec<i64> = nums
+                    .iter()
+                    .take(i)
+                    .chain(nums.iter().skip(i + 1))
+                    .map(&i64::to_owned)
+                    .collect();
 
                 if is_safe_line(&new_nums) {
                     safe = true;
@@ -63,5 +73,4 @@ pub fn run() {
     });
 
     println!("Dampened safe levels: {dampened_safe_levels}");
-
 }
