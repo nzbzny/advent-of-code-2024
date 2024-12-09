@@ -24,14 +24,11 @@ fn parse_ruleset(rules_str: &[String]) -> HashMap<String, HashSet<String>> {
 pub fn run() {
     let lines = utils::parse_file("day_5");
     
-    let split_idx = match lines.iter().enumerate().find(|(_, s)| { !s.contains('|') }) {
-        Some((idx, _)) => idx,
-        None => {
-            println!("Could not find split_idx");
-            return;
-        }
+    let Some((split_idx, _)) = lines.iter().enumerate().find(|(_, s)| { !s.contains('|') }) else {
+        println!("Could not find split_idx");
+        return;
     };
-
+    
     let (rules_str, printed) = lines.split_at(split_idx);
     let ruleset = parse_ruleset(rules_str);
 
@@ -40,25 +37,23 @@ pub fn run() {
 
     let mut invalids: Vec<String> = vec![];
     for manual in printed {
-        let mut pages = manual.split(',');
+        let pages: Vec<String> = manual.split(',').map(&str::to_string).collect();
         let mut seen: HashSet<String> = HashSet::new();
         let mut valid = true;
-        let mut count = 0;
 
-        pages.clone().for_each(|page| {
+        for page in &pages {
             if let Some(rules) = ruleset.get(page) {
                 if !rules.is_disjoint(&seen) {
                     valid = false;
-                    return;
+                    break;
                 }
             }
 
             seen.insert(page.to_owned());
-            count += 1;
-        });
+        }
 
         if valid {
-            sum += pages.nth(count / 2).unwrap().parse::<i64>().unwrap();
+            sum += pages[pages.len() / 2].parse::<i64>().unwrap();
         } else {
             invalids.push(manual.to_string());
         }
@@ -70,51 +65,46 @@ pub fn run() {
     let mut corrected_sum = 0;
 
     for manual in invalids {
-        let mut pages = manual.split(',');
-        let mut seen: HashSet<String> = HashSet::new();
-        let mut count = 0;
+        let mut new_manual: Vec<String> = manual.split(',').map(&str::to_string).collect();
 
-        let mut new_manual: Vec<String> = vec![];
+        let mut valid = false;
 
-        pages.clone().for_each(|page| {
-            if let Some(rules) = ruleset.get(page) {
-                let mut intersection_peekable = rules.intersection(&seen).peekable();
-                if let Some(p) = intersection_peekable.next() {
-                    if let Some((idx, _)) = new_manual.iter().enumerate().find(|(_, s)| *s == p) {
-                        new_manual.insert(idx, page.to_string());
-                    }
-                } else {
-                    new_manual.push(page.to_string());
-                }
-            }
+        while !valid {
+            valid = rebalance(&mut new_manual, &ruleset);
+        }
 
-            seen.insert(page.to_owned());
-            count += 1;
-        });
-
-        check_valid(new_manual.clone(), &ruleset);
-
-        corrected_sum += pages.nth(count / 2).unwrap().parse::<i64>().unwrap();
+        corrected_sum += new_manual[new_manual.len() / 2].parse::<i64>().unwrap();
     }
 
     println!("Corrected sum is: {corrected_sum}");
 }
 
-fn check_valid(pages: Vec<String>, ruleset: &HashMap<String, HashSet<String>>) {
-        let mut seen: HashSet<String> = HashSet::new();
+struct RebalanceInfo {
+    remove_idx: usize,
+    insert_idx: usize,
+    page: String,
+}
 
-        for page in pages.clone() {
-            if let Some(rules) = ruleset.get(&page) {
-                if !rules.is_disjoint(&seen) {
-                    println!("invalid: {:?}", pages);
-                    // let int = rules.intersection(&seen).fold("".to_owned(), |acc, v| {
-                    //     acc.to_owned() + v
-                    // });
-                    // println!()
-                    return;
+fn rebalance(new_manual: &mut Vec<String>, ruleset: &HashMap<String, HashSet<String>>) -> bool {
+    let mut rebalance_info: Option<RebalanceInfo> = None;
+
+    'outer: for (idx, page) in new_manual.iter().enumerate() {
+        if let Some(rules) = ruleset.get(page) {
+            for (i, _) in new_manual.iter().enumerate().take(idx) {
+                if rules.contains(&new_manual[i]) {
+                    rebalance_info = Some(RebalanceInfo{remove_idx: idx, insert_idx: i, page: page.to_string()});
+                    break 'outer;
                 }
             }
-
-            seen.insert(page.to_owned());
         }
+    }
+
+    match rebalance_info {
+        Some(RebalanceInfo{remove_idx, insert_idx, page}) => {
+            new_manual.remove(remove_idx);
+            new_manual.insert(insert_idx, page);
+            false
+        }
+        None => true,
+    }
 }
