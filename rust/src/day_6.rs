@@ -79,54 +79,113 @@ struct RouteComponent {
     direction: Direction
 }
 
-fn would_object_loop(start_x: usize, start_y: usize, map: &[Vec<char>]) -> bool{
-    let mut x_pos = start_x;
-    let mut y_pos = start_y;
+fn obstruction_would_loop(
+    mut x: usize,
+    mut y: usize,
+    mut direction: Direction,
+    map: &[Vec<char>],
+    visited: &HashSet<RouteComponent>
+) -> bool {
+    if visited.contains(&RouteComponent{ x_pos: x, y_pos: y, direction }) {
+        return true;
+    }
+
+    let mut new_visited: HashSet<RouteComponent> = HashSet::new();
+    new_visited.insert(RouteComponent{ x_pos: x, y_pos: y, direction });
+
+    while let Some((x_pos, y_pos)) = get_next_pos(x, y, direction, map) {
+        if map[y_pos][x_pos] == '#' {
+            direction = get_next_direction(direction);
+        } else {
+            x = x_pos;
+            y = y_pos;
+        }
+
+        let rc = RouteComponent{ x_pos, y_pos, direction };
+        if visited.contains(&rc) || new_visited.contains(&rc) {
+            return true;
+        }
+
+        new_visited.insert(RouteComponent{x_pos, y_pos, direction});
+    }
+
+    false
+}
+
+fn part_2_improved(mut x_pos: usize, mut y_pos: usize, map: &[Vec<char>]) {
     let mut direction = Direction::Up;
     let mut visited: HashSet<RouteComponent> = HashSet::new();
-    visited.insert(RouteComponent{x_pos, y_pos, direction});
+    visited.insert(RouteComponent{ x_pos, y_pos, direction });
+    let mut count = 0;
 
     loop {
-        let Some((next_x, next_y)) = get_next_pos(x_pos, y_pos, direction, map) else { return false; };
+        let Some((next_x, next_y)) = get_next_pos(x_pos, y_pos, direction, map) else { break; };
 
         if map[next_y][next_x] == '#' {
             direction = get_next_direction(direction);
         } else {
             x_pos = next_x;
             y_pos = next_y;
-            let rc = RouteComponent{ x_pos, y_pos, direction };
-
-            if visited.contains(&rc) {
-                return true;
-            }
-
-            visited.insert(rc);
         }
-    }
-}
 
-fn part_2(start_x: usize, start_y: usize, mut map: Vec<Vec<char>>) {
-    let mut count = 0;
-
-    for y in 0..map.len() {
-        for x in 0..map[y].len() {
-            if map[y][x] != '#' {
-                map[y][x] = '#';
-                if would_object_loop(start_x, start_y, &map) {
-                    count += 1;
-                }
-
-                map[y][x] = '.';
-            }
+        println!("{x_pos},{y_pos}");
+        if obstruction_would_loop(x_pos, y_pos, get_next_direction(direction), map, &visited) {
+            count += 1;
         }
+
+        visited.insert(RouteComponent{ x_pos, y_pos, direction});
     }
 
     println!("Obstruction count is: {count}");
 }
 
+// fn would_object_loop(start_x: usize, start_y: usize, map: &[Vec<char>]) -> bool{
+//     let mut x_pos = start_x;
+//     let mut y_pos = start_y;
+//     let mut direction = Direction::Up;
+//     let mut visited: HashSet<RouteComponent> = HashSet::new();
+//     visited.insert(RouteComponent{ x_pos, y_pos, direction });
+
+//     loop {
+//         let Some((next_x, next_y)) = get_next_pos(x_pos, y_pos, direction, map) else { return false; };
+
+//         if map[next_y][next_x] == '#' {
+//             direction = get_next_direction(direction);
+//         } else {
+//             x_pos = next_x;
+//             y_pos = next_y;
+//             let rc = RouteComponent{ x_pos, y_pos, direction };
+
+//             if visited.contains(&rc) {
+//                 return true;
+//             }
+
+//             visited.insert(rc);
+//         }
+//     }
+// }
+
+// fn part_2(start_x: usize, start_y: usize, mut map: Vec<Vec<char>>) {
+//     let mut count = 0;
+
+//     for y in 0..map.len() {
+//         for x in 0..map[y].len() {
+//             if map[y][x] != '#' {
+//                 map[y][x] = '#';
+//                 if would_object_loop(start_x, start_y, &map) {
+//                     count += 1;
+//                 }
+
+//                 map[y][x] = '.';
+//             }
+//         }
+//     }
+
+//     println!("Obstruction count is: {count}");
+// }
+
 pub fn run() {
     let lines = utils::parse_file("day_6");
-
 
     let mut x_pos = 0;
     let mut y_pos = 0;
@@ -141,5 +200,6 @@ pub fn run() {
     }).collect();
 
     part_1(x_pos, y_pos, &map);
-    part_2(x_pos, y_pos, map);
+    part_2_improved(x_pos, y_pos, &map);
+    // part_2(x_pos, y_pos, map);
 }
