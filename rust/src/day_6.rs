@@ -2,6 +2,7 @@ use std::collections::HashSet;
 
 use crate::utils;
 
+#[derive(Clone, Copy, Eq, Hash, PartialEq)]
 enum Direction {
     Up,
     Down,
@@ -49,23 +50,10 @@ fn get_next_direction(direction: Direction) -> Direction {
     }
 }
 
-pub fn run() {
-    let lines = utils::parse_file("day_6");
-
+fn part_1(start_x: usize, start_y: usize, map: &Vec<Vec<char>>) {
+    let mut x_pos = start_x;
+    let mut y_pos = start_y;
     let mut direction = Direction::Up;
-
-    let mut x_pos = 0;
-    let mut y_pos = 0;
-    
-    let map: Vec<Vec<char>> = lines.iter().enumerate().map(|(y, line)| {
-        if let Some(x) = line.find('^') {
-            y_pos = y;
-            x_pos = x;
-        }
-
-        line.chars().collect()
-    }).collect();
-
     let mut visited: HashSet<(usize, usize)> = HashSet::new();
     visited.insert((x_pos, y_pos));
 
@@ -82,4 +70,76 @@ pub fn run() {
     }
 
     println!("Count is: {}", visited.len());
+}
+
+#[derive(Eq, Hash, PartialEq)]
+struct RouteComponent {
+    x_pos: usize,
+    y_pos: usize,
+    direction: Direction
+}
+
+fn would_object_loop(start_x: usize, start_y: usize, map: &Vec<Vec<char>>) -> bool{
+    let mut x_pos = start_x;
+    let mut y_pos = start_y;
+    let mut direction = Direction::Up;
+    let mut visited: HashSet<RouteComponent> = HashSet::new();
+    visited.insert(RouteComponent{x_pos, y_pos, direction});
+
+    loop {
+        let Some((next_x, next_y)) = get_next_pos(x_pos, y_pos, &direction, &map) else { return false; };
+
+        if map[next_y][next_x] == '#' {
+            direction = get_next_direction(direction);
+        } else {
+            x_pos = next_x;
+            y_pos = next_y;
+            let rc = RouteComponent{ x_pos, y_pos, direction };
+
+            if visited.contains(&rc) {
+                return true;
+            }
+
+            visited.insert(rc);
+        }
+    }
+}
+
+fn part_2(start_x: usize, start_y: usize, mut map: Vec<Vec<char>>) {
+    let mut count = 0;
+
+    for y in 0..map.len() {
+        for x in 0..map[y].len() {
+            if map[y][x] != '#' {
+                map[y][x] = '#';
+                if would_object_loop(start_x, start_y, &map) {
+                    count += 1;
+                }
+
+                map[y][x] = '.';
+            }
+        }
+    }
+
+    println!("Obstruction count is: {count}");
+}
+
+pub fn run() {
+    let lines = utils::parse_file("day_6");
+
+
+    let mut x_pos = 0;
+    let mut y_pos = 0;
+    
+    let map: Vec<Vec<char>> = lines.iter().enumerate().map(|(y, line)| {
+        if let Some(x) = line.find('^') {
+            y_pos = y;
+            x_pos = x;
+        }
+
+        line.chars().collect()
+    }).collect();
+
+    part_1(x_pos, y_pos, &map);
+    part_2(x_pos, y_pos, map);
 }
