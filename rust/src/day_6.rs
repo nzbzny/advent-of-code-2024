@@ -10,7 +10,7 @@ enum Direction {
     Right,
 }
 
-fn get_next_pos(x_pos: usize, y_pos: usize, direction: &Direction, map: &Vec<Vec<char>>) -> Option<(usize, usize)> {
+fn get_next_pos(x_pos: usize, y_pos: usize, direction: Direction, map: &[Vec<char>]) -> Option<(usize, usize)> {
     match direction {
         Direction::Up => {
             if let Some(y) = y_pos.checked_sub(1) {
@@ -50,7 +50,7 @@ fn get_next_direction(direction: Direction) -> Direction {
     }
 }
 
-fn part_1(start_x: usize, start_y: usize, map: &Vec<Vec<char>>) {
+fn part_1(start_x: usize, start_y: usize, map: &[Vec<char>]) {
     let mut x_pos = start_x;
     let mut y_pos = start_y;
     let mut direction = Direction::Up;
@@ -58,7 +58,7 @@ fn part_1(start_x: usize, start_y: usize, map: &Vec<Vec<char>>) {
     visited.insert((x_pos, y_pos));
 
     loop {
-        let Some((next_x, next_y)) = get_next_pos(x_pos, y_pos, &direction, &map) else { break; };
+        let Some((next_x, next_y)) = get_next_pos(x_pos, y_pos, direction, map) else { break; };
 
         if map[next_y][next_x] == '#' {
             direction = get_next_direction(direction);
@@ -79,7 +79,7 @@ struct RouteComponent {
     direction: Direction
 }
 
-fn would_object_loop(start_x: usize, start_y: usize, map: &Vec<Vec<char>>) -> bool{
+fn would_object_loop(start_x: usize, start_y: usize, map: &[Vec<char>]) -> bool{
     let mut x_pos = start_x;
     let mut y_pos = start_y;
     let mut direction = Direction::Up;
@@ -87,7 +87,7 @@ fn would_object_loop(start_x: usize, start_y: usize, map: &Vec<Vec<char>>) -> bo
     visited.insert(RouteComponent{x_pos, y_pos, direction});
 
     loop {
-        let Some((next_x, next_y)) = get_next_pos(x_pos, y_pos, &direction, &map) else { return false; };
+        let Some((next_x, next_y)) = get_next_pos(x_pos, y_pos, direction, map) else { return false; };
 
         if map[next_y][next_x] == '#' {
             direction = get_next_direction(direction);
