@@ -116,7 +116,7 @@ fn part_2_improved(mut x_pos: usize, mut y_pos: usize, map: &[Vec<char>]) {
     let mut direction = Direction::Up;
     let mut visited: HashSet<RouteComponent> = HashSet::new();
     visited.insert(RouteComponent{ x_pos, y_pos, direction });
-    let mut count = 0;
+    let mut obstructions: HashSet<(usize, usize)> = HashSet::new();
 
     loop {
         let Some((next_x, next_y)) = get_next_pos(x_pos, y_pos, direction, map) else { break; };
@@ -130,13 +130,15 @@ fn part_2_improved(mut x_pos: usize, mut y_pos: usize, map: &[Vec<char>]) {
 
         println!("{x_pos},{y_pos}");
         if obstruction_would_loop(x_pos, y_pos, get_next_direction(direction), map, &visited) {
-            count += 1;
+            if let Some((_, _)) = get_next_pos(x_pos, y_pos, direction, map) {
+                obstructions.insert((x_pos, y_pos));
+            }
         }
 
         visited.insert(RouteComponent{ x_pos, y_pos, direction});
     }
 
-    println!("Obstruction count is: {count}");
+    println!("Obstruction count is: {}", obstructions.len());
 }
 
 // fn would_object_loop(start_x: usize, start_y: usize, map: &[Vec<char>]) -> bool{
