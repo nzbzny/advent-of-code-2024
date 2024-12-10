@@ -6,7 +6,7 @@ struct Equation {
     values: Vec<u64>
 }
 
-fn create_equations(lines: Vec<String>) -> Vec<Equation> {
+fn create_equations(lines: &[String]) -> Vec<Equation> {
     lines.iter().map(|line| {
         let (res, vals) = line.split_once(':').expect("Could not split line {line}");
         let result = res.parse::<u64>().unwrap();
@@ -26,9 +26,19 @@ fn is_equation_valid(eq: &Equation, param_idx: usize, curr_val: u64) -> bool {
         return true;
     }
 
-    let mult = if param_idx == 0 { eq.values[param_idx] } else { curr_val * eq.values[param_idx] };
-    if is_equation_valid(eq, param_idx + 1, mult) {
-        return true;
+    if param_idx > 0 {
+        let mult = curr_val * eq.values[param_idx];
+        if is_equation_valid(eq, param_idx + 1, mult) {
+            return true;
+        }
+    }
+
+    if param_idx > 0 {
+        let log = eq.values[param_idx].ilog10();
+        let concat = curr_val * (10_u64.pow(log + 1)) + eq.values[param_idx];
+        if is_equation_valid(eq, param_idx + 1, concat) {
+            return true;
+        }
     }
     
     false
@@ -38,7 +48,7 @@ pub fn run() {
     let lines = utils::parse_file("day_7");
     // let lines = utils::parse_file("test");
 
-    let equations = create_equations(lines);
+    let equations = create_equations(&lines);
 
     let sum = equations.iter().fold(0, |acc, eq| {
         if is_equation_valid(eq, 0, 0) {
