@@ -96,7 +96,7 @@ fn calculate_checksum(disk_map: &[i64]) -> i64 {
 }
 
 pub fn run() {
-    // let lines = utils::parse_file("test");
+    // let lines = utils::parse_file("9_test");
     let lines = utils::parse_file("day_9");
 
     // part 1
