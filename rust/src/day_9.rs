@@ -65,7 +65,7 @@ fn move_to_free_space_part_2(disk_map: &mut [i64], mut free_space: VecDeque<Bloc
 
         if let Some(space) = free_space.iter_mut().find(|space| space.len >= block.len) {
             if space.idx >= block.idx {
-                return;
+                continue;
             }
 
             for i in 0..block.len {
