@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use crate::utils;
 
@@ -63,25 +63,25 @@ fn is_same_plant(map: &Vec<Vec<char>>, pos: &Position, plant: char) -> bool {
     map[pos.y][pos.x] == plant
 }
 
-fn calculate_region_perimeter(map: &Vec<Vec<char>>, regions: &[Position]) -> usize {
-    let plant = map[regions[0].y][regions[0].x];
+fn calculate_region_perimeter(map: &Vec<Vec<char>>, region: &[Position]) -> usize {
+    let plant = map[region[0].y][region[0].x];
     
-    regions.iter().fold(0, |mut acc, region| {
-        if !is_same_plant(map, &Position{ x: region.x, y: region.y + 1 }, plant) {
+    region.iter().fold(0, |mut acc, plot| {
+        if !is_same_plant(map, &Position{ x: plot.x, y: plot.y + 1 }, plant) {
             acc += 1;
         }
-        if !is_same_plant(map, &Position{ x: region.x + 1, y: region.y }, plant) {
+        if !is_same_plant(map, &Position{ x: plot.x + 1, y: plot.y }, plant) {
             acc += 1;
         }
-        if let Some(x) = region.x.checked_sub(1) {
-            if !is_same_plant(map, &Position{ x, y: region.y }, plant) {
+        if let Some(x) = plot.x.checked_sub(1) {
+            if !is_same_plant(map, &Position{ x, y: plot.y }, plant) {
                 acc += 1;
             }
         } else {
             acc += 1;
         }
-        if let Some(y) = region.y.checked_sub(1) {
-            if !is_same_plant(map, &Position{ x: region.x, y }, plant) {
+        if let Some(y) = plot.y.checked_sub(1) {
+            if !is_same_plant(map, &Position{ x: plot.x, y }, plant) {
                 acc += 1;
             }
         } else {
@@ -90,6 +90,56 @@ fn calculate_region_perimeter(map: &Vec<Vec<char>>, regions: &[Position]) -> usi
 
         acc
     })
+}
+
+#[derive(Clone, Eq, Hash, PartialEq)]
+struct LineSegment {
+    p1: Position,
+    p2: Position,
+}
+
+fn get_region_outside_line_segments(region: &[Position]) -> HashSet<LineSegment> {
+    let region_set: HashSet<Position> = HashSet::from_iter(region.iter().cloned());
+    let mut result = HashSet::new();
+
+    for plot in region {
+        // right
+        if !region_set.contains(&Position{ x: plot.x + 1, y: plot.y }) {
+            result.insert(LineSegment { p1: Position { x: plot.x + 1, y: plot.y }, p2: Position { x: plot.x + 1, y: plot.y + 1 } });
+        }
+
+        // bottom
+        if !region_set.contains(&Position { x: plot.x, y: plot.y + 1 }) {
+            result.insert(LineSegment { p1: Position { x: plot.x, y: plot.y + 1 }, p2: Position { x: plot.x + 1, y: plot.y + 1 } });
+        }
+
+        // top
+        if let Some(y) = plot.y.checked_sub(1) {
+            if !region_set.contains(&Position{ x: plot.x, y }) {
+                result.insert(LineSegment { p1: Position { x: plot.x, y: plot.y }, p2: Position { x: plot.x + 1, y: plot.y } });
+            }
+        }
+
+        // left
+        if let Some(x) = plot.x.checked_sub(1) {
+            if !region_set.contains(&Position{ x, y: plot.y }) {
+                result.insert(LineSegment { p1: Position { x: plot.x, y: plot.y }, p2: Position { x: plot.x, y: plot.y + 1 } });
+            }
+        }
+    }
+
+    result
+}
+
+fn count_region_sides(region: &[Position]) -> usize {
+    let edges = get_region_outside_line_segments(region);
+    let mut count = 0;
+
+    for edge in edges {
+        // check if edge is a corner
+    }
+
+    count
 }
 
 pub fn run() {
