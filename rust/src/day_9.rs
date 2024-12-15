@@ -85,6 +85,7 @@ fn move_to_free_space_part_2(disk_map: &mut [i64], mut free_space: VecDeque<Bloc
     }
 }
 
+#[allow(clippy::cast_possible_wrap)]
 fn calculate_checksum(disk_map: &[i64]) -> i64 {
     disk_map.iter().enumerate().fold(0, |acc, (idx, val)| {
         if *val == -1 {
