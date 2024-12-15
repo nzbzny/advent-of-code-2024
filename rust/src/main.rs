@@ -11,6 +11,8 @@ mod day_10;
 mod day_11;
 mod day_12;
 mod day_13;
+mod day_14;
+mod day_15;
 mod utils;
 
 fn main() {
@@ -29,6 +31,8 @@ fn main() {
             11 => crate::day_11::run(),
             12 => crate::day_12::run(),
             13 => crate::day_13::run(),
+            14 => crate::day_14::run(),
+            15 => crate::day_15::run(),
             day => println!("Unknown day: {day}"),
         },
         None => {
