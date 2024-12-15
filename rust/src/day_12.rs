@@ -135,54 +135,61 @@ fn get_region_outside_line_segments(region: &[Position]) -> HashSet<LineSegment>
     result
 }
 
-fn contains_vertical_from_point(pos: &Position, edges: &HashSet<LineSegment>) -> bool {
-    if edges.contains(&LineSegment{ p1: pos.clone(), p2: Position{ x: pos.x, y: pos.y + 1 }}) {
-        true
+fn contains_vertical_from_point(pos: &Position, edges: &HashSet<LineSegment>) -> Option<LineSegment> {
+    let down = LineSegment{ p1: pos.clone(), p2: Position{ x: pos.x, y: pos.y + 1 }};
+    if edges.contains(&down) {
+        return Some(down);
     } else if let Some(y) = pos.y.checked_sub(1) {
-        edges.contains(&LineSegment{ p1: Position{ x: pos.x, y }, p2: pos.clone() })
-    } else {
-        false
+        let up = LineSegment{ p1: Position{ x: pos.x, y }, p2: pos.clone() };
+        if edges.contains(&up) {
+            return Some(up);
+        }
     }
+
+    None
 }
 
-fn contains_horizontal_from_point(pos: &Position, edges: &HashSet<LineSegment>) -> bool {
-    if edges.contains(&LineSegment{ p1: pos.clone(), p2: Position{ x: pos.x + 1, y: pos.y }}) {
-        true
+fn contains_horizontal_from_point(pos: &Position, edges: &HashSet<LineSegment>) -> Option<LineSegment> {
+    let right = LineSegment{ p1: pos.clone(), p2: Position{ x: pos.x + 1, y: pos.y }};
+    if edges.contains(&right) {
+        return Some(right);
     } else if let Some(x) = pos.x.checked_sub(1) {
-        edges.contains(&LineSegment{ p1: Position{ x, y: pos.y }, p2: pos.clone() })
-    } else {
-        false
+        let left = LineSegment{ p1: Position{ x, y: pos.y }, p2: pos.clone() };
+        if edges.contains(&left) {
+            return Some(left);
+        }
     }
+
+    None
 }
 
 fn count_region_sides(region: &[Position]) -> usize {
     let edges = get_region_outside_line_segments(region);
-    let mut vertices: HashSet<Position> = HashSet::new();
+    let mut count = 0;
+    let mut seen_pairs: HashSet<(LineSegment, LineSegment)> = HashSet::new();
 
     for edge in &edges {
         // horizontal
         if edge.p1.x == edge.p2.x {
-            if contains_horizontal_from_point(&edge.p1, &edges) {
-                vertices.insert(edge.p1.clone());
+            if let Some(segment) = contains_horizontal_from_point(&edge.p1, &edges) {
+                count += 1;
             }
 
-            if contains_horizontal_from_point(&edge.p2, &edges) {
-                vertices.insert(edge.p2.clone());
+            if let Some(segment) = contains_horizontal_from_point(&edge.p2, &edges) {
+                count += 1;
             }
         } else {
-            if contains_vertical_from_point(&edge.p1, &edges) {
-                vertices.insert(edge.p1.clone());
+            if let Some(segment) = contains_vertical_from_point(&edge.p1, &edges) {
+                count += 1;
             }
 
-            if contains_vertical_from_point(&edge.p2, &edges) {
-                vertices.insert(edge.p2.clone());
+            if let Some(segment) = contains_vertical_from_point(&edge.p2, &edges) {
+                count += 1;
             }
         }
     }
-    // println!("{:?}", edges);
-    // println!("{:?}", vertices);
 
-    vertices.len()
+    count / 2
 }
 
 pub fn run() {
@@ -205,7 +212,7 @@ pub fn run() {
         let x = count_region_sides(region);
         let y = region.len();
 
-        // println!("region of {} plants with price {y} * {x} = {}", map[region[0].y][region[0].x], x * y);
+        println!("region of {} plants with price {y} * {x} = {}", map[region[0].y][region[0].x], x * y);
 
         acc + (x * y)
     });
