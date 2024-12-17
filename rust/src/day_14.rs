@@ -119,8 +119,8 @@ fn show_robot_positions_over_time(mut robots: Vec<Robot>, x_max: i64, y_max: i64
             let position = calculate_final_position(&robot, x_max, y_max, 1);
 
             robot.position = position;
-            std::thread::sleep(Duration::from_millis(500));
         }
+        std::thread::sleep(Duration::from_millis(1000));
     }
 }
 
