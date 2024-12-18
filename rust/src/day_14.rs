@@ -1,16 +1,22 @@
-use std::time::Duration;
+use std::{collections::HashSet, time::Duration};
 
 use crate::utils;
 
 #[derive(Debug)]
-struct Position {
+struct NonAbsolutePosition {
     x: i64,
     y: i64,
 }
 
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+struct Position {
+    x: usize,
+    y: usize
+}
+
 #[derive(Debug)]
 struct Robot {
-    position: Position,
+    position: NonAbsolutePosition,
     x_velocity: i64,
     y_velocity: i64,
 }
@@ -27,7 +33,7 @@ fn create_robot(line: &String) -> Robot {
     let (x, y) = parse_str(pos_str);
     let (x_velocity, y_velocity) = parse_str(vel_str);
 
-    Robot{ position: Position{ x, y }, x_velocity, y_velocity }
+    Robot{ position: NonAbsolutePosition{ x, y }, x_velocity, y_velocity }
 }
 
 fn create_robots(lines: &[String]) -> Vec<Robot> {
@@ -36,7 +42,7 @@ fn create_robots(lines: &[String]) -> Vec<Robot> {
     }).collect()
 }
 
-fn calculate_final_position(robot: &Robot, x_max: i64, y_max: i64, seconds: i64) -> Position {
+fn calculate_final_position(robot: &Robot, x_max: i64, y_max: i64, seconds: i64) -> NonAbsolutePosition {
     let mut x = (robot.position.x + robot.x_velocity * seconds) % x_max;
     let mut y = (robot.position.y + robot.y_velocity * seconds) % y_max;
 
@@ -48,12 +54,10 @@ fn calculate_final_position(robot: &Robot, x_max: i64, y_max: i64, seconds: i64)
         y += y_max;
     }
 
-    // println!("{:?} moved to {:?} after {seconds} seconds with x_max={x_max} y_max={y_max}", robot, Position{ x, y });
-
-    Position{ x, y }
+    NonAbsolutePosition{ x, y }
 }
 
-fn count_robots_in_quadrants(positions: &[Position], x_max: i64, y_max: i64) -> (i64, i64, i64, i64) {
+fn count_robots_in_quadrants(positions: &[NonAbsolutePosition], x_max: i64, y_max: i64) -> (i64, i64, i64, i64) {
     let left_x_boundary = x_max / 2;
     let right_x_boundary = if x_max % 2 == 0 { left_x_boundary } else { left_x_boundary + 1 };
     let top_y_boundary = y_max / 2;
@@ -81,15 +85,56 @@ fn count_robots_in_quadrants(positions: &[Position], x_max: i64, y_max: i64) -> 
     (q1, q2, q3, q4)
 }
 
-fn get_safety_factor(final_positions: &[Position], x_max: i64, y_max: i64) -> i64 {
+fn get_safety_factor(final_positions: &[NonAbsolutePosition], x_max: i64, y_max: i64) -> i64 {
     let (q1, q2, q3, q4) = count_robots_in_quadrants(final_positions, x_max, y_max);
-    // println!("{q1}, {q2}, {q3}, {q4}");
 
-    //TODO: any special handling for an empty quadrant?
     q1 * q2 * q3 * q4
 }
 
-fn print_robots(robots: &[Robot], x_max: i64, y_max: i64) {
+fn count_robot_line(grid: &[Vec<char>], mut pos: Position, seen: &mut HashSet<Position>) -> usize {
+    let mut horizontal_count = 0;
+    let mut vertical_count = 0;
+
+    // right
+    while pos.x < grid[0].len() && grid[pos.y][pos.x] == 'X' {
+        seen.insert(pos.clone());
+
+        pos.x += 1;
+        horizontal_count += 1;
+    }
+
+    pos.x -= horizontal_count;
+
+    while pos.y < grid.len() && grid[pos.y][pos.x] == 'X' {
+        seen.insert(pos.clone());
+
+        pos.y += 1;
+        vertical_count += 1;
+    }
+
+    usize::max(horizontal_count, vertical_count)
+}
+
+fn should_print_grid(grid: &[Vec<char>]) -> bool {
+    let mut longest_count = 0;
+    let mut seen: HashSet<Position> = HashSet::new();
+    for y in 0..grid.len() {
+        for x in 0..grid[0].len() {
+            // check for line of robots. >10? >20? >30?
+            if grid[y][x] == 'X' && !seen.contains(&Position{ x, y }) {
+                let count = count_robot_line(grid, Position{ x, y }, &mut seen);
+
+                if count > longest_count {
+                    longest_count = count;
+                }
+            }
+        }
+    }
+
+    longest_count > 20
+}
+
+fn check_and_print_robots(robots: &[Robot], x_max: i64, y_max: i64, iter: usize) {
     let mut grid: Vec<Vec<char>> = vec![];
     grid.resize_with(y_max as usize, || {
         let mut col = vec![];
@@ -104,23 +149,29 @@ fn print_robots(robots: &[Robot], x_max: i64, y_max: i64) {
         grid[y][x] = 'X';
     }
 
-    for line in grid {
-        println!("{:?}", line);
+    if should_print_grid(&grid) {
+        println!("iteration: {iter}");
+        for line in grid {
+            println!("{:?}", line);
+        }
+        std::thread::sleep(Duration::from_millis(1000));
     }
 }
 
 fn show_robot_positions_over_time(mut robots: Vec<Robot>, x_max: i64, y_max: i64) {
     let mut iter = 0;
     loop {
-        println!("iteration: {iter}");
-        print_robots(&robots, x_max, y_max);
+        if iter % 100 == 0 {
+            println!("iteration: {iter}");
+        }
+        check_and_print_robots(&robots, x_max, y_max, iter);
 
         for robot in &mut robots {
             let position = calculate_final_position(&robot, x_max, y_max, 1);
 
             robot.position = position;
         }
-        std::thread::sleep(Duration::from_millis(1000));
+        iter += 1;
     }
 }
 
@@ -129,7 +180,7 @@ pub fn run() {
     let (lines, x_max, y_max, seconds) = (utils::parse_file("day_14"), 101, 103, 100);
 
     let robots = create_robots(&lines);
-    let final_positions: Vec<Position> = robots.iter().map(|robot| {
+    let final_positions: Vec<NonAbsolutePosition> = robots.iter().map(|robot| {
         calculate_final_position(robot, x_max, y_max, seconds)
     }).collect();
 
