@@ -38,7 +38,7 @@ fn build_map(input: &[&String]) -> (Vec<Vec<Space>>, Position) {
 }
 
 fn parse_input(input: &[String]) -> (Vec<Vec<Space>>, Position, String){
-    let instructions_idx = input.iter().enumerate().find(|(_, line)| !line.starts_with("#")).unwrap().0;
+    let instructions_idx = input.iter().enumerate().find(|(_, line)| !line.starts_with('#')).unwrap().0;
 
     let map_str: Vec<&String> = input.iter().take(instructions_idx - 1).collect();
     let instructions: Vec<String> = input.iter().skip(instructions_idx).map(&String::to_owned).collect();
@@ -48,16 +48,20 @@ fn parse_input(input: &[String]) -> (Vec<Vec<Space>>, Position, String){
 }
 
 fn try_move_object_type(map: &mut Vec<Vec<Space>>, new_pos: &Position, old_pos: &Position, direction: &Direction) -> bool {
-    match map[new_pos.y][new_pos.x] {
-        Space::Empty => {
+    if new_pos.y >= map.len() || new_pos.x >= map[new_pos.y].len() {
+        return false;
+    }
+
+    match map[new_pos.y].get(new_pos.x) {
+        Some(Space::Empty) => {
             map[new_pos.y][new_pos.x] = map[old_pos.y][old_pos.x].clone();
             map[old_pos.y][old_pos.x] = Space::Empty;
             true
         }
-        Space::Wall => {
+        Some(Space::Wall) => {
             false
         }
-        Space::Box => {
+        Some(Space::Box) => {
             if try_move_object(map, &Position{ x: new_pos.x, y: new_pos.y }, direction) {
                 map[new_pos.y][new_pos.x] = map[old_pos.y][old_pos.x].clone();
                 map[old_pos.y][old_pos.x] = Space::Empty; // TODO 
@@ -66,7 +70,7 @@ fn try_move_object_type(map: &mut Vec<Vec<Space>>, new_pos: &Position, old_pos: 
                 false
             }
         }
-        Space::Robot => {
+        _ => {
             println!("Should not have gotten here");
             false
         }

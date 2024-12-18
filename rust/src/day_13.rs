@@ -19,11 +19,11 @@ struct Matrix {
 
 fn get_value(s: &String, search: &str) -> f64 {
     s.chars()
-        .skip(s.find(search).expect(&format!("Could not find {search} in {s}").to_string()) + search.len())
-        .take_while(|c| c.is_digit(10))
+        .skip(s.find(search).unwrap_or_else(|| panic!("Could not find {search} in {s}")) + search.len())
+        .take_while(char::is_ascii_digit)
         .collect::<String>()
         .parse::<f64>()
-        .expect(&format!("Failed to parse {s} looking for {search}").to_string())
+        .unwrap_or_else(|_| panic!("Failed to parse {s} looking for {search}"))
 }
 
 fn create_single_matrix(first: &String, second: &String, result: &String) -> Matrix {
@@ -107,6 +107,7 @@ fn gaussian_elimination(matrix: &Matrix) -> Option<(i64, i64)> {
     
     let delta = 0.01;
     if a_result > 0.0 && b_result > 0.0 && is_within_delta(a_result, delta) && is_within_delta(b_result, delta) {
+        #[allow(clippy::cast_possible_truncation)]
         return Some((a_result.round() as i64, b_result.round() as i64));
     }
 
@@ -120,7 +121,7 @@ pub fn run() {
     let systems = create_matrices(&lines);
 
     let coins = systems.iter().fold(0, |acc, matrix| {
-        if let Some((a, b)) = gaussian_elimination(&matrix) {
+        if let Some((a, b)) = gaussian_elimination(matrix) {
             acc + (3 * a + b)
         } else {
             acc
@@ -131,14 +132,14 @@ pub fn run() {
 
     let corrected_systems: Vec<Matrix> = systems.iter().map(|system| {
         let mut new_system = system.clone();
-        new_system.row1.result += 10000000000000.0;
-        new_system.row2.result += 10000000000000.0;
+        new_system.row1.result += 10_000_000_000_000.0;
+        new_system.row2.result += 10_000_000_000_000.0;
 
         new_system
     }).collect();
 
     let corrected_coins = corrected_systems.iter().fold(0, |acc, matrix| {
-        if let Some((a, b)) = gaussian_elimination(&matrix) {
+        if let Some((a, b)) = gaussian_elimination(matrix) {
             acc + (3 * a + b)
         } else {
             acc

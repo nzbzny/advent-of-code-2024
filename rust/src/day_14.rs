@@ -23,13 +23,13 @@ struct Robot {
 
 fn parse_str(s: &str) -> (i64, i64) {
     let vals_str = s.chars().skip(2).collect::<String>();
-    let (x, y) = vals_str.split_once(",").expect(&format!("Failed to split , in {vals_str}"));
+    let (x, y) = vals_str.split_once(',').unwrap_or_else(|| panic!("Failed to split ',' in {vals_str}"));
 
     (x.parse().unwrap(), y.parse().unwrap())
 }
 
-fn create_robot(line: &String) -> Robot {
-    let (pos_str, vel_str) = line.split_once(" ").unwrap();
+fn create_robot(line: &str) -> Robot {
+    let (pos_str, vel_str) = line.split_once(' ').unwrap();
     let (x, y) = parse_str(pos_str);
     let (x_velocity, y_velocity) = parse_str(vel_str);
 
@@ -134,6 +134,7 @@ fn should_print_grid(grid: &[Vec<char>]) -> bool {
     longest_count > 20
 }
 
+#[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
 fn check_and_print_robots(robots: &[Robot], x_max: i64, y_max: i64, iter: usize) {
     let mut grid: Vec<Vec<char>> = vec![];
     grid.resize_with(y_max as usize, || {
@@ -152,7 +153,7 @@ fn check_and_print_robots(robots: &[Robot], x_max: i64, y_max: i64, iter: usize)
     if should_print_grid(&grid) {
         println!("iteration: {iter}");
         for line in grid {
-            println!("{:?}", line);
+            println!("{line:?}");
         }
         std::thread::sleep(Duration::from_millis(1000));
     }
@@ -167,7 +168,7 @@ fn show_robot_positions_over_time(mut robots: Vec<Robot>, x_max: i64, y_max: i64
         check_and_print_robots(&robots, x_max, y_max, iter);
 
         for robot in &mut robots {
-            let position = calculate_final_position(&robot, x_max, y_max, 1);
+            let position = calculate_final_position(robot, x_max, y_max, 1);
 
             robot.position = position;
         }
